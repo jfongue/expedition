@@ -24,7 +24,7 @@ coordonnées continues sur un continent généré.
 | `player_zone_discoveries` | Ce que *ce* joueur a découvert — la carte est grisée par défaut. |
 | `upgrades` / `player_upgrades` | Catalogue campement / capacités / connaissances, et le niveau atteint par joueur. |
 | `items` / `player_inventory` | Catalogue de matériel et ressources, et ce que chaque joueur porte (privé). |
-| `actions` | Actions contextuelles et types de zones où elles sont proposées. |
+| `actions` / `zone_actions` | Actions contextuelles : types de zones qui les proposent par défaut, capacité qui les accélère, butin indicatif — plus les offres propres à une zone. |
 | `expeditions` | Une journée sur le continent : organisateur, zone cible, départ, couvre-feu, taxe, taille d'équipage. |
 | `expedition_members` | Équipage et candidatures (`applied` → `accepted` → `aboard` → `returned`), plus le règlement du butin au retour. |
 | `expedition_steps` | Le planning : enchaînement `move` / `action` / `return`, durées estimées et marge d'erreur, statut d'exécution. |

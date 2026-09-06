@@ -6,8 +6,15 @@
 create table actions (
   code text primary key,
   name text not null,
+  -- Zone kinds that offer the action by default; zone_actions adds one-off
+  -- offerings on a specific zone.
   zone_kinds text[] not null default '{}',
   base_duration_seconds int not null default 600 check (base_duration_seconds > 0),
+  -- Capacity that speeds the action up, if any.
+  skill_code text references upgrades (code) on delete set null,
+  -- Indicative loot, as item_code -> quantity. The loot rules live in the game
+  -- logic; this is what the planning UI shows.
+  yields jsonb not null default '{}'::jsonb,
   description text
 );
 
@@ -16,6 +23,20 @@ grant select on actions to authenticated;
 
 create policy "actions are readable by any authenticated user"
   on actions for select to authenticated using (true);
+
+-- Actions a specific zone offers on top of what its kind implies (an event can
+-- unlock one).
+create table zone_actions (
+  zone_id uuid not null references zones (id) on delete cascade,
+  action_code text not null references actions (code) on delete cascade,
+  primary key (zone_id, action_code)
+);
+
+alter table zone_actions enable row level security;
+grant select on zone_actions to authenticated;
+
+create policy "zone actions are readable by any authenticated user"
+  on zone_actions for select to authenticated using (true);
 
 -- Expeditions -----------------------------------------------------------------
 -- Solo runs have a single member; later, players organise their own and recruit

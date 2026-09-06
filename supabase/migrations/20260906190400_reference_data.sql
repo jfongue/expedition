@@ -30,12 +30,12 @@ insert into upgrades (code, name, category, description, max_level, base_cost) v
   ('crafts',     'Métiers',    'knowledge', 'Reconnaître et valoriser ce que l''on ramène.',               3, 220)
 on conflict (code) do nothing;
 
-insert into actions (code, name, zone_kinds, base_duration_seconds, description) values
-  ('mine',    'Miner',              array['mountain','cave'],                   1800, 'Extraire minerai et cristaux.'),
-  ('hunt',    'Chasser',            array['forest','plain','swamp'],            1500, 'Ramener viande et peaux.'),
-  ('forage',  'Récolter',           array['forest','plain','coast','swamp'],     900, 'Bois, plantes, ressources de surface.'),
-  ('build',   'Construire une cache', array['forest','mountain','cave','ruins'],2400, 'Stocker du butin sur place pour un prochain jour.'),
-  ('explore', 'Explorer',           array['plain','forest','mountain','coast','swamp','ruins','cave'], 1200, 'Découvrir la zone et ce qu''elle cache.'),
-  ('scavenge','Fouiller',           array['ruins'],                             1800, 'Fouiller les ruines : rare, risqué, précieux.'),
-  ('rest',    'Se reposer',         array['base','plain','forest'],              600, 'Récupérer un peu d''endurance.')
+insert into actions (code, name, zone_kinds, base_duration_seconds, skill_code, description) values
+  ('mine',    'Miner',              array['mountain','cave'],                   1800, 'mining',    'Extraire minerai et cristaux.'),
+  ('hunt',    'Chasser',            array['forest','plain','swamp'],            1500, null,        'Ramener viande et peaux.'),
+  ('forage',  'Récolter',           array['forest','plain','coast','swamp'],     900, null,        'Bois, plantes, ressources de surface.'),
+  ('build',   'Construire une cache', array['forest','mountain','cave','ruins'],2400, 'crafts',    'Stocker du butin sur place pour un prochain jour.'),
+  ('explore', 'Explorer',           array['plain','forest','mountain','coast','swamp','ruins','cave'], 1200, 'shortcuts', 'Découvrir la zone et ce qu''elle cache.'),
+  ('scavenge','Fouiller',           array['ruins'],                             1800, 'languages', 'Fouiller les ruines : rare, risqué, précieux.'),
+  ('rest',    'Se reposer',         array['base','plain','forest'],              600, 'endurance', 'Récupérer un peu d''endurance.')
 on conflict (code) do nothing;

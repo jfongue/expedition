@@ -82,6 +82,8 @@ create table zones (
   center_x double precision not null,
   center_y double precision not null,
   radius double precision not null default 120 check (radius > 0),
+  -- Multiplies the time needed to travel *into* the zone. 1 = open ground.
+  difficulty double precision not null default 1 check (difficulty > 0),
   -- Public zones sit around the fixed elevators and need no discovery.
   is_public boolean not null default false,
   has_elevator boolean not null default false,
