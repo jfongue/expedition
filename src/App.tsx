@@ -1,16 +1,11 @@
-import { PhaserGame } from './game/PhaserGame'
+import { GameProvider } from './state/game'
+import { GameShell } from './ui/GameShell'
 import './App.css'
 
-function App() {
+export default function App() {
   return (
-    <main className="app">
-      <header className="app-header">
-        <h1>Expedition</h1>
-        <p>Territoire inexploré — molette ou pincement pour zoomer, glisser pour déplacer la carte.</p>
-      </header>
-      <PhaserGame />
-    </main>
+    <GameProvider>
+      <GameShell />
+    </GameProvider>
   )
 }
-
-export default App

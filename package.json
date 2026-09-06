@@ -9,7 +9,8 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "seed:sql": "vite-node scripts/generate-seed.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.115.0",
@@ -25,6 +26,7 @@
     "oxlint": "^1.79.0",
     "typescript": "~6.0.2",
     "vite": "^8.2.2",
+    "vite-node": "^6.0.0",
     "vitest": "^4.1.11"
   }
 }
