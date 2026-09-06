@@ -3,11 +3,13 @@ import './App.css'
 
 function App() {
   return (
-    <section id="center">
-      <h1>Expedition</h1>
-      <p>Clique sur une case pour déplacer ton pion. Ouvre plusieurs onglets pour voir les autres joueurs en direct.</p>
+    <main className="app">
+      <header className="app-header">
+        <h1>Expedition</h1>
+        <p>Territoire inexploré — molette ou pincement pour zoomer, glisser pour déplacer la carte.</p>
+      </header>
       <PhaserGame />
-    </section>
+    </main>
   )
 }
 

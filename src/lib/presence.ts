@@ -6,6 +6,7 @@ export interface PlayerPresence {
   color: string
   x: number
   y: number
+  updatedAt: number
 }
 
 type PlayersListener = (players: PlayerPresence[]) => void
@@ -23,15 +24,26 @@ let identityPromise: Promise<{ userId: string; color: string }> | undefined
 async function resolveIdentity() {
   let userId: string | undefined
   try {
-    const { data, error } = await supabase.auth.signInAnonymously()
-    if (!error) userId = data.user?.id
+    // Reuse the stored session: signInAnonymously() always mints a brand new
+    // anonymous user, which would inflate auth.users on every page load.
+    const { data: existing } = await supabase.auth.getSession()
+    userId = existing.session?.user.id
+
+    if (!userId) {
+      const { data, error } = await supabase.auth.signInAnonymously()
+      if (!error) userId = data.user?.id
+    }
   } catch {
     // Anonymous sign-in is not enabled on the project yet.
   }
 
+  const id = userId ?? crypto.randomUUID()
+  let hash = 0
+  for (const char of id) hash = (hash * 31 + char.charCodeAt(0)) | 0
+
   return {
-    userId: userId ?? crypto.randomUUID(),
-    color: PLAYER_COLORS[Math.floor(Math.random() * PLAYER_COLORS.length)],
+    userId: id,
+    color: PLAYER_COLORS[Math.abs(hash) % PLAYER_COLORS.length],
   }
 }
 
@@ -44,10 +56,18 @@ export function getIdentity() {
 
 function emit() {
   const state = channel?.presenceState<PlayerPresence>() ?? {}
-  const players = Object.values(state)
-    .map((entries) => entries[entries.length - 1])
-    .filter(Boolean)
 
+  // A reload leaves the previous connection registered under the same key until
+  // the server times it out, so keep only each player's freshest position.
+  const freshest = new Map<string, PlayerPresence>()
+  for (const entries of Object.values(state)) {
+    for (const entry of entries) {
+      const known = freshest.get(entry.userId)
+      if (!known || entry.updatedAt > known.updatedAt) freshest.set(entry.userId, entry)
+    }
+  }
+
+  const players = [...freshest.values()]
   for (const listener of listeners) listener(players)
 }
 
@@ -63,6 +83,12 @@ export function joinMapPresence(userId: string) {
     .on('presence', { event: 'join' }, emit)
     .on('presence', { event: 'leave' }, emit)
     .subscribe()
+
+  // Without this the server keeps the old connection alive for a while after a
+  // reload, so the player shows up twice in the presence state.
+  window.addEventListener('pagehide', () => {
+    if (channel) supabase.removeChannel(channel)
+  })
 }
 
 export function onPlayersChange(listener: PlayersListener) {
