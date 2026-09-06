@@ -44,6 +44,14 @@ export function coastlinePoints(count = 260) {
   return points
 }
 
+// Fixed descent points from the orbiting ship. Only the ground around them is
+// surveyed; everything else stays unexplored until the game opens it up.
+export const PUBLIC_ZONES = [
+  { id: 'nord', x: 1520, y: 520, radius: 300 },
+  { id: 'ouest', x: 760, y: 700, radius: 285 },
+  { id: 'sud-est', x: 1450, y: 1030, radius: 295 },
+]
+
 export function islandBounds() {
   const points = coastlinePoints(120)
   const xs = points.map((p) => p.x)
