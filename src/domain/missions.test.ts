@@ -37,6 +37,24 @@ describe('generateMissions', () => {
   })
 })
 
+describe('the departure the board offers', () => {
+  it('follows the sunrise it is given', () => {
+    // The Chambre upgrade shifts sunrise earlier; the board has to move with it,
+    // or the upgrade buys a longer day the player cannot actually start.
+    const early = generateMissions(5, { sunrise: 6 * 60 - 36 })
+
+    for (const mission of early) expect(mission.earliestDepartAt).toBe(6 * 60 - 36)
+    for (const mission of generateMissions(5)) expect(mission.earliestDepartAt).toBe(6 * 60)
+  })
+
+  it('does not otherwise change the board', () => {
+    const strip = (missions: ReturnType<typeof generateMissions>) =>
+      missions.map(({ earliestDepartAt: _ignored, ...rest }) => rest)
+
+    expect(strip(generateMissions(5, { sunrise: 300 }))).toEqual(strip(generateMissions(5)))
+  })
+})
+
 describe('objectiveMet', () => {
   const mission = generateMissions(1)[0]
 

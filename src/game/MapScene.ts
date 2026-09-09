@@ -14,7 +14,7 @@ const DRAG_THRESHOLD = 6
 const ZONE_HIT_PX = 32
 
 const INK = 0x3f464d
-const ROUTE = 0x6f767d
+const ROUTE = 0x5b6268
 const SELECTABLE = 0x9298a0
 
 /**
@@ -24,6 +24,9 @@ const SELECTABLE = 0x9298a0
  */
 export class MapScene extends Phaser.Scene {
   private view: MapView = mapBridge.view
+  private focusKey: string | null = null
+  /** Set once the camera is the player's business — panned, zoomed or framed. */
+  private cameraOwned = false
   private overlay!: Phaser.GameObjects.Graphics
   private labels = new Map<string, Phaser.GameObjects.Text>()
   private tokens = new Map<string, Phaser.GameObjects.Container>()
@@ -47,13 +50,21 @@ export class MapScene extends Phaser.Scene {
     this.setupCameraControls()
     this.resetView()
 
-    // The canvas is measured before the layout settles, so refit once it has.
-    const onResize = () => this.resetView()
+    // The canvas is measured before the layout settles, so refit once it has —
+    // but only while the camera is still ours: the side panel's scrollbar comes
+    // and goes as screens change, and each of those resizes would otherwise
+    // throw away the region framing and the player's own panning.
+    const onResize = () => (this.cameraOwned ? this.applyBounds() : this.resetView())
     this.scale.on('resize', onResize)
 
     this.unsubscribe = mapBridge.subscribe((view) => {
       this.view = view
       this.redraw()
+
+      if (view.focus && view.focus.key !== this.focusKey) {
+        this.focusKey = view.focus.key
+        this.focusRegion(view.focus.zones)
+      }
     })
 
     this.events.once('destroy', () => {
@@ -81,7 +92,7 @@ export class MapScene extends Phaser.Scene {
   }
 
   /** Frames one surveyed region, for when a mission is picked. */
-  focusRegion(codes: readonly string[]) {
+  private focusRegion(codes: readonly string[]) {
     const zones = codes.map((code) => zoneByCode(this.view, code)).filter((zone) => zone !== undefined)
     if (zones.length === 0) return
 
@@ -97,14 +108,14 @@ export class MapScene extends Phaser.Scene {
       MAX_ZOOM,
     )
 
+    // Framed immediately rather than panned: a camera animation only advances
+    // while the render loop runs, and browsers stall that loop whenever the tab
+    // is in the background — which would leave the map stuck mid-flight, and
+    // taps hit-testing against a camera that never arrived.
+    this.cameraOwned = true
     camera.setZoom(zoom)
     this.applyBounds()
-    camera.pan(
-      (Math.min(...xs) + Math.max(...xs)) / 2,
-      (Math.min(...ys) + Math.max(...ys)) / 2,
-      420,
-      'Cubic.easeOut',
-    )
+    camera.centerOn((Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...ys) + Math.max(...ys)) / 2)
   }
 
   // --- overlay ---------------------------------------------------------
@@ -144,7 +155,7 @@ export class MapScene extends Phaser.Scene {
     const distance = Phaser.Math.Distance.Between(from.x, from.y, to.x, to.y)
     const steps = Math.max(2, Math.round(distance / 16))
 
-    this.overlay.lineStyle(1.8, ROUTE, 0.75)
+    this.overlay.lineStyle(2.2, ROUTE, 0.9)
     for (let step = 0; step < steps; step += 2) {
       const a = step / steps
       const b = Math.min(1, (step + 1) / steps)
@@ -216,7 +227,9 @@ export class MapScene extends Phaser.Scene {
 
     if (this.view.self) {
       seen.add('self')
-      this.placeToken('self', this.view.self.x, this.view.self.y, this.view.self.color, this.view.self.label, true)
+      // Your own token carries no name: it would sit on top of the zone label,
+      // and the filled disc already tells you which one is yours.
+      this.placeToken('self', this.view.self.x, this.view.self.y, this.view.self.color, '', true)
     }
 
     for (const player of this.view.others) {
@@ -240,16 +253,23 @@ export class MapScene extends Phaser.Scene {
       const dot = this.add.circle(0, 0, self ? 10 : 7, tint)
       dot.setStrokeStyle(self ? 3 : 2, 0xffffff)
 
-      const name = this.add
-        .text(0, self ? 18 : 14, label, {
-          fontFamily: 'ui-sans-serif, system-ui, -apple-system, Helvetica, Arial, sans-serif',
-          fontSize: '12px',
-          color: self ? '#3f464d' : '#878e96',
-        })
-        .setOrigin(0.5, 0)
-        .setResolution(4)
+      const parts: Phaser.GameObjects.GameObject[] = [dot]
 
-      token = this.add.container(x, y, [dot, name])
+      if (label) {
+        // Above the dot: zone names sit below their marker.
+        parts.push(
+          this.add
+            .text(0, -14, label, {
+              fontFamily: 'ui-sans-serif, system-ui, -apple-system, Helvetica, Arial, sans-serif',
+              fontSize: '12px',
+              color: '#878e96',
+            })
+            .setOrigin(0.5, 1)
+            .setResolution(4),
+        )
+      }
+
+      token = this.add.container(x, y, parts)
       this.tokens.set(id, token)
       return
     }
@@ -301,6 +321,7 @@ export class MapScene extends Phaser.Scene {
       if (!this.dragMoved) return
 
       const camera = this.cameras.main
+      this.cameraOwned = true
       camera.scrollX -= dx / camera.zoom
       camera.scrollY -= dy / camera.zoom
       this.dragOrigin.set(pointer.x, pointer.y)
@@ -355,6 +376,7 @@ export class MapScene extends Phaser.Scene {
     const zoom = Phaser.Math.Clamp(camera.zoom * factor, MIN_ZOOM, MAX_ZOOM)
     if (zoom === camera.zoom) return
 
+    this.cameraOwned = true
     const before = camera.getWorldPoint(screenX, screenY)
     camera.setZoom(zoom)
     this.applyBounds()

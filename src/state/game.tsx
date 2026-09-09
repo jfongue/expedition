@@ -296,12 +296,23 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const route = routeOf(state.plan, state.run)
     const self = selfMarker(state)
 
+    // Frame the region the mission is in — once, when the mission is picked.
+    // The whole continent is mostly unsurveyed sea and grey ground.
+    const region = session.shape.zones.find((zone) => zone.code === landing)?.region
+    const focus = region
+      ? {
+          key: `${state.mission?.id ?? ''}`,
+          zones: session.shape.zones.filter((zone) => zone.region === region).map((zone) => zone.code),
+        }
+      : null
+
     mapBridge.setView({
       zones: session.shape.zones,
       landingZoneId: landing,
       route: landing ? [...route, landing] : route,
       leg: legOf(state.run),
       selectable: selectableZones(state),
+      focus,
       self,
       others: state.players.filter((player) => player.userId !== session.identity.userId),
     })

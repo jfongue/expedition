@@ -26,6 +26,12 @@ export interface MapView {
   leg: { from: string; to: string; progress: number } | null
   /** Zones the player may click. Empty means clicking is disabled. */
   selectable: readonly string[]
+  /**
+   * Ask the scene to frame these zones. `key` identifies the request: the scene
+   * re-frames when it changes, and otherwise leaves the camera where the player
+   * put it.
+   */
+  focus: { key: string; zones: readonly string[] } | null
   /** Where the player stands. */
   self: MapMarker | null
   others: readonly PlayerPresence[]
@@ -37,6 +43,7 @@ export const EMPTY_VIEW: MapView = {
   route: [],
   leg: null,
   selectable: [],
+  focus: null,
   self: null,
   others: [],
 }
