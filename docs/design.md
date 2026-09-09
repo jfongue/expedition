@@ -51,27 +51,65 @@ Des explorateurs opportunistes voyagent en vaisseau et se positionnent en orbite
 | **Événements exclusifs** | Un événement spécial se déclenche si le joueur et un membre de son groupe sont dans la même zone au même moment. |
 | **Missions coop** | Expéditions à plusieurs, nécessitant une coordination fine (débloqué plus tard). |
 
-## 5. Prototype v1 (état actuel)
-- Carte unique simplifiée (grille 8×8, zones nommées).
-- Un clic = déplacement immédiat ; clic-droit = planification d'une destination future visible par le groupe.
-- Présence multijoueur simulée par polling (~4s) via le stockage partagé d'un artifact — pas de vrai temps réel, pas d'historique hors-ligne.
-- Amis (liste perso), chat global, échanges simples (bois/métal/nourriture mockés), groupes avec ID partagé, bannière d'événement exclusif si croisement en zone.
-- **Limites connues** : pas d'authentification (le nom = identité, collisions possibles), pas de notifications asynchrones, last-write-wins sur le storage partagé.
+## 5. État actuel (v2)
+Les deux boucles sont jouables de bout en bout, dans le navigateur et sur mobile.
 
-## 6. Cible technique (v2 — backend réel)
-Objectif : présence temps réel, connexion asynchrone (revenir plus tard sans tout perdre), notifications.
+- **Continent** : 14 zones nommées réparties sur les trois disques relevés
+  autour des ascenseurs ; le reste du continent est grisé. Chaque zone a un type
+  de terrain qui détermine sa difficulté de traversée et les actions offertes.
+- **Boucle macro** : tableau de missions du jour (une par ascenseur, objectif +
+  taxe + prime), option « rester au camp », règlement au retour (taxe, navette de
+  secours si retour après le coucher du soleil, prime d'objectif), boutique
+  d'améliorations où chaque entrée a un effet mécanique réel, xp et niveaux,
+  journal des expéditions.
+- **Boucle micro** : planning par touchers de carte, estimations de durée dont
+  l'incertitude croît avec l'heure et décroît avec le niveau, marge et point de
+  non-retour affichés en continu, horloge accélérable (pause / ×1 / ×3 / ×8),
+  événements aléatoires, replanification en cours de route, retour forcé
+  automatique, retour manuel immédiat.
+- **Multijoueur** : présence temps réel (position, statut camp/expédition) et
+  chat global, tous deux sur un canal Realtime — donc sans dépendre du schéma.
+- **Persistance** : Supabase quand le schéma est appliqué (le monde lui-même est
+  lu dans les tables du catalogue), repli sur `localStorage` sinon, l'en-tête
+  indiquant lequel est actif.
+- **Domaine testé** : le jeu vit dans `src/domain`, en TypeScript pur et
+  déterministe ; 77 tests, dont une journée complète jouée d'un bout à l'autre.
 
-- **Backend** : Supabase (Postgres + Realtime + Auth) — compte déjà existant.
-- **Auth** : comptes réels (email ou magic link) pour remplacer le nom comme identité.
-- **Temps réel** : Supabase Realtime (channels de présence + écoute des changements Postgres) pour la position des joueurs, le chat, les groupes.
-- **Persistance** : tables Postgres pour joueurs, inventaire, groupes, chat, trades, événements — remplace le storage d'artifact.
-- **Notifications** : à définir — web push (PWA) ou notifications in-app au retour en ligne (historique d'événements consultable), selon effort souhaité.
-- **Repo** : `github.com/jfongue/expedition`, développement via Claude Code (accès direct au filesystem local).
+**Limites connues** : identité anonyme (pas de compte nommé), pas de
+notifications asynchrones, amis / groupes / échanges / missions coopératives
+présents en base mais pas encore dans le client, chat sans historique.
 
-## 7. Roadmap suggérée
-1. Setup Supabase (schéma DB : players, inventory, groups, chat_messages, trades, events).
-2. Auth basique + migration du prototype vers de vraies requêtes Supabase (au lieu du storage artifact).
-3. Presence temps réel (positions + statut en ligne/hors ligne).
-4. Historique d'événements / notifications au retour.
-5. Vraie boucle macro : bases, ascenseurs, taxe d'expédition, améliorations de personnage.
-6. Missions coop par candidature.
+## 6. Cible technique
+- **Backend** : Supabase (Postgres + Realtime + Auth). Schéma écrit et
+  versionné dans `supabase/migrations` ; reste à appliquer sur le projet.
+- **Client** : React + Vite pour l'interface, Phaser pour la carte, le jeu
+  lui-même isolé en TypeScript pur et déterministe dans `src/domain`.
+- **Auth** : connexion anonyme aujourd'hui (l'identité survit aux rechargements
+  via la session stockée) ; comptes nommés — e-mail ou lien magique — ensuite.
+- **Temps réel** : Supabase Realtime. La présence et le chat passent par un
+  canal, sans table, donc sans dépendre du schéma ; l'écoute des changements
+  Postgres servira pour les groupes et les échanges.
+- **Persistance** : tables Postgres pour joueurs, inventaire, améliorations,
+  expéditions et événements. Les zones et les actions sont aussi lues en base :
+  le monde se retouche sans livrer de client.
+- **Rejouabilité** : chaque journée est graine, et la graine est stockée sur
+  l'expédition — une journée soldée peut être auditée ou rejouée à l'identique,
+  y compris plus tard côté serveur.
+- **Notifications** : à définir — web push (PWA) ou notifications in-app au
+  retour en ligne, la table `events` servant déjà d'historique de rattrapage.
+- **Repo** : `github.com/jfongue/expedition`, développement via Claude Code.
+
+## 7. Roadmap
+Fait : schéma Supabase, auth anonyme, présence temps réel, boucle macro
+complète (ascenseurs, taxe, améliorations), boucle micro complète (planning,
+estimations, événements, retour forcé).
+
+Reste à faire, dans l'ordre suggéré :
+1. Appliquer les migrations sur le projet (`supabase db push`) pour passer la
+   persistance et le catalogue du monde en base.
+2. Comptes nommés à la place de l'identité anonyme.
+3. Amis, groupes et destination planifiée visible par le groupe.
+4. Chat persistant par zone et par groupe, puis échanges de matériel.
+5. Notifications asynchrones / historique de rattrapage au retour en ligne.
+6. Missions coopératives par candidature, avec équipage choisi avant le coucher
+   du soleil.

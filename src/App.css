@@ -714,6 +714,27 @@ button:disabled {
 }
 
 @media (max-width: 900px) {
+  /* The header is a single row on the desktop layout; on a phone it has to be
+     allowed to wrap, or the save-mode badge runs off the right edge. */
+  .app-header {
+    flex-wrap: wrap;
+    gap: 10px 16px;
+    padding: 12px 16px;
+  }
+
+  .header-stats {
+    gap: 16px;
+  }
+
+  .header-stats > span {
+    min-width: 0;
+  }
+
+  .badge {
+    padding: 3px 7px;
+    letter-spacing: 0.08em;
+  }
+
   .body {
     flex-direction: column;
   }
