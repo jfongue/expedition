@@ -81,7 +81,7 @@ présents en base mais pas encore dans le client, chat sans historique.
 
 ## 6. Cible technique
 - **Backend** : Supabase (Postgres + Realtime + Auth). Schéma écrit et
-  versionné dans `supabase/migrations` ; reste à appliquer sur le projet.
+  versionné dans `supabase/migrations`, appliqué sur le projet réel.
 - **Client** : React + Vite pour l'interface, Phaser pour la carte, le jeu
   lui-même isolé en TypeScript pur et déterministe dans `src/domain`.
 - **Auth** : connexion anonyme aujourd'hui (l'identité survit aux rechargements
@@ -102,11 +102,12 @@ présents en base mais pas encore dans le client, chat sans historique.
 ## 7. Roadmap
 Fait : schéma Supabase, auth anonyme, présence temps réel, boucle macro
 complète (ascenseurs, taxe, améliorations), boucle micro complète (planning,
-estimations, événements, retour forcé).
+estimations, événements, retour forcé), migrations appliquées sur le projet
+réel (2026-09-12) — persistance et catalogue du monde en base.
 
 Reste à faire, dans l'ordre suggéré :
-1. Appliquer les migrations sur le projet (`supabase db push`) pour passer la
-   persistance et le catalogue du monde en base.
+1. Héberger le client (Vercel) pour que l'expérience existe hors de la machine
+   de dev.
 2. Comptes nommés à la place de l'identité anonyme.
 3. Amis, groupes et destination planifiée visible par le groupe.
 4. Chat persistant par zone et par groupe, puis échanges de matériel.

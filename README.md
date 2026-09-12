@@ -74,17 +74,17 @@ s'arrête quand on change d'onglet n'a plus d'enjeu.
 ## Base de données
 
 Le schéma et les conventions sont décrits dans
-[`supabase/README.md`](supabase/README.md).
+[`supabase/README.md`](supabase/README.md). Les migrations sont appliquées sur
+le projet réel (`gdzoggpwxiekiiiefrjs`) ; une nouvelle migration s'ajoute avec
+`supabase migration new <nom>` puis se déploie avec `supabase db push --linked`
+(le repo doit d'abord être lié : `supabase link --project-ref gdzoggpwxiekiiiefrjs`).
 
-```bash
-supabase link --project-ref gdzoggpwxiekiiiefrjs
-supabase db push
-```
-
-Tant que les migrations ne sont pas appliquées, `probeSupabase()` le détecte et
-le jeu bascule sur un dépôt local (`localStorage`) plutôt que de refuser de
-démarrer. Une fois appliquées, les zones et les actions sont lues dans les tables
-du catalogue : le monde se retouche en base, sans livrer de client.
+Si le schéma n'est pas accessible (projet non lié, clés absentes, migration en
+retard), `probeSupabase()` le détecte et le jeu bascule sur un dépôt local
+(`localStorage`) plutôt que de refuser de démarrer — l'en-tête indique alors
+lequel des deux est actif. En temps normal les zones et les actions sont lues
+dans les tables du catalogue : le monde se retouche en base, sans livrer de
+client.
 
 Le seed du continent est **généré** depuis `src/domain/continent.ts` — c'est la
 source de vérité unique. `src/domain/continentSeed.test.ts` échoue si le SQL
