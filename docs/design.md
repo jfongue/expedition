@@ -106,8 +106,9 @@ estimations, événements, retour forcé), migrations appliquées sur le projet
 réel (2026-09-12) — persistance et catalogue du monde en base.
 
 Reste à faire, dans l'ordre suggéré :
-1. Héberger le client (Vercel) pour que l'expérience existe hors de la machine
-   de dev.
+1. Activer GitHub Pages sur le repo (source : GitHub Actions) et renseigner les
+   deux secrets `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` — le workflow et
+   la config de build sont prêts, voir [`README.md`](../README.md#déploiement).
 2. Comptes nommés à la place de l'identité anonyme.
 3. Amis, groupes et destination planifiée visible par le groupe.
 4. Chat persistant par zone et par groupe, puis échanges de matériel.

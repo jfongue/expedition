@@ -91,6 +91,24 @@ source de vérité unique. `src/domain/continentSeed.test.ts` échoue si le SQL
 commité et le catalogue divergent : après avoir touché aux zones ou aux actions,
 lancez `npm run seed:sql` et commitez le résultat.
 
+## Déploiement
+
+Le client est une page statique (pas de routeur : un seul écran, piloté par
+l'état) publiée sur **GitHub Pages** via `.github/workflows/deploy.yml` : à
+chaque push sur `main`, le workflow build puis publie `dist/`. `vite.config.ts`
+fixe `base: '/expedition/'` uniquement au build (le serveur de dev reste à `/`),
+puisque Pages sert un site de projet sous ce sous-chemin.
+
+Deux réglages à faire une fois, à la main, dans GitHub (pas depuis le CLI) :
+
+1. **Settings → Pages → Build and deployment → Source : GitHub Actions.**
+2. **Settings → Secrets and variables → Actions** : ajouter `VITE_SUPABASE_URL`
+   et `VITE_SUPABASE_ANON_KEY` (mêmes valeurs que dans `.env.local`) — Vite les
+   fige dans le bundle au moment du build, donc le workflow en a besoin comme
+   secrets de dépôt, pas seulement en local.
+
+Le site est ensuite à `https://jfongue.github.io/expedition/`.
+
 ## Ce qui n'est pas encore là
 
 Le schéma prévoit amis, groupes, chat par zone, échanges et missions coopératives
