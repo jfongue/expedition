@@ -16,13 +16,13 @@ export interface Session {
 
 let sessionPromise: Promise<Session> | undefined
 
-export function openSession(): Promise<Session> {
-  sessionPromise ??= resolve()
+export function openSession(username?: string): Promise<Session> {
+  sessionPromise ??= resolve(username)
   return sessionPromise
 }
 
-async function resolve(): Promise<Session> {
-  const identity = await getIdentity()
+async function resolve(username?: string): Promise<Session> {
+  const identity = await getIdentity(username)
   const seed = { playerId: identity.userId, username: identity.username, color: identity.color }
 
   const blocker = identity.authenticated

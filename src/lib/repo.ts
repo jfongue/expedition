@@ -107,7 +107,11 @@ export function createLocalRepo(reason: string): Repo {
 
     async loadProfile(seed) {
       const stored = read<Profile | null>(`${PROFILE_KEY}:${seed.playerId}`, null)
-      return stored ? { ...freshProfile(seed), ...stored, playerId: seed.playerId } : freshProfile(seed)
+      // The username just typed at login always wins over whatever was saved
+      // last time — that is how renaming a profile works, with no password.
+      return stored
+        ? { ...freshProfile(seed), ...stored, playerId: seed.playerId, username: seed.username }
+        : freshProfile(seed)
     },
 
     async saveProfile(profile) {

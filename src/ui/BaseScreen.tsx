@@ -22,15 +22,18 @@ export function BaseScreen() {
   if (!profile) return null
 
   const stored = bagValue(profile.inventory, ITEM_VALUES)
+  // Only one elevator is open for now; the rest unlock later through upgrades.
+  const mission = missions[0]
 
   return (
     <div className="screen">
-      <Panel title="Missions du jour" aside={<span className="muted">Jour {profile.day}</span>}>
-        <div className="missions">
-          {missions.map((mission) => (
-            <MissionCard key={mission.id} mission={mission} onPick={() => actions.chooseMission(mission)} />
-          ))}
-        </div>
+      <Panel title="Mission">
+        {mission ? (
+          <div className="missions">
+            <MissionCard mission={mission} onPick={() => actions.chooseMission(mission)} />
+          </div>
+        ) : null}
+        <p className="hint">D’autres ascenseurs se débloqueront avec des améliorations.</p>
         <button type="button" className="secondary wide" onClick={actions.restAtCamp}>
           Rester au camp un jour de plus
           <em>Aucun revenu, mais la prochaine journée est plus rapide et mieux estimée</em>
