@@ -134,7 +134,10 @@ export function createSupabaseRepo(): Repo {
 
       return {
         ...base,
-        username: row?.username ?? base.username,
+        // The username just typed at login always wins over whatever was
+        // saved last time — that is how renaming a profile works, with no
+        // password.
+        username: seed.username,
         color: row?.color ?? base.color,
         day: row?.day ?? base.day,
         xp: row?.xp ?? base.xp,

@@ -10,10 +10,11 @@ import {
 } from '../domain'
 import { mapBridge } from '../game/mapBridge'
 import { onChat, onPlayersChange, joinMapPresence, sendChat, trackSelf, type ChatMessage, type PlayerPresence } from '../lib/presence'
+import { rememberName } from '../lib/profileNames'
 import { openSession, type Session } from '../lib/session'
 import type { Profile, RunRecord } from '../lib/repo'
 
-export type Screen = 'loading' | 'base' | 'plan' | 'run' | 'debrief'
+export type Screen = 'splash' | 'login' | 'loading' | 'base' | 'plan' | 'run' | 'debrief'
 
 export interface GameState {
   screen: Screen
@@ -41,7 +42,7 @@ const SPEEDS = [0, 15, 45, 120] as const
 export const SPEED_LABELS = ['Pause', '×1', '×3', '×8'] as const
 
 const initialState: GameState = {
-  screen: 'loading',
+  screen: 'splash',
   session: null,
   profile: null,
   mission: null,
@@ -130,6 +131,7 @@ function reduce(state: GameState, action: Action): GameState {
 }
 
 export interface GameActions {
+  enterName(username: string): void
   chooseMission(mission: Mission): void
   setDepartDelay(minutes: number): void
   addMove(zoneCode: string): void
@@ -180,25 +182,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
     stateRef.current = state
   }, [state])
 
+  // The splash is a beat, not a load: the real session only opens once a name
+  // has been chosen on the login screen, via `actions.enterName`.
   useEffect(() => {
-    let cancelled = false
-
-    openSession()
-      .then(async (session) => {
-        if (cancelled) return
-        const journal = await session.repo.listRuns(session.identity.userId)
-        if (cancelled) return
-
-        dispatch({ type: 'ready', session, journal })
-        joinMapPresence(session.identity.userId)
-      })
-      .catch((error: unknown) => {
-        dispatch({ type: 'failed', error: error instanceof Error ? error.message : String(error) })
-      })
-
-    return () => {
-      cancelled = true
-    }
+    const timer = setTimeout(() => dispatch({ type: 'screen', screen: 'login' }), 500)
+    return () => clearTimeout(timer)
   }, [])
 
   useEffect(() => onPlayersChange((players) => dispatch({ type: 'players', players })), [])
@@ -367,6 +355,24 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
 
     return {
+      enterName(username) {
+        const trimmed = username.trim()
+        if (!trimmed) return
+
+        rememberName(trimmed)
+        dispatch({ type: 'screen', screen: 'loading' })
+
+        openSession(trimmed)
+          .then(async (session) => {
+            const journal = await session.repo.listRuns(session.identity.userId)
+            dispatch({ type: 'ready', session, journal })
+            joinMapPresence(session.identity.userId)
+          })
+          .catch((error: unknown) => {
+            dispatch({ type: 'failed', error: error instanceof Error ? error.message : String(error) })
+          })
+      },
+
       chooseMission(mission) {
         dispatch({ type: 'choose-mission', mission })
       },

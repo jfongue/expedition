@@ -53,7 +53,7 @@ export interface Identity {
 
 let identityPromise: Promise<Identity> | undefined
 
-async function resolveIdentity(): Promise<Identity> {
+async function resolveIdentity(chosenName?: string): Promise<Identity> {
   let userId: string | undefined
   let authenticated = false
 
@@ -78,7 +78,7 @@ async function resolveIdentity(): Promise<Identity> {
 
   return {
     userId: id,
-    username: `Explorateur-${id.replace(/-/g, '').slice(0, 6)}`,
+    username: chosenName?.trim() || `Explorateur-${id.replace(/-/g, '').slice(0, 6)}`,
     color: PLAYER_COLORS[Math.abs(hash) % PLAYER_COLORS.length],
     authenticated,
   }
@@ -100,8 +100,8 @@ function localId(): string {
 
 // Identity is resolved once per tab so the presence key and the tracked
 // payload always agree, even across a StrictMode remount.
-export function getIdentity() {
-  identityPromise ??= resolveIdentity()
+export function getIdentity(chosenName?: string) {
+  identityPromise ??= resolveIdentity(chosenName)
   return identityPromise
 }
 

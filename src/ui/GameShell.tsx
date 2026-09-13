@@ -4,8 +4,10 @@ import { useGame } from '../state/game'
 import { BaseScreen } from './BaseScreen'
 import { ChatPanel } from './ChatPanel'
 import { DebriefScreen } from './DebriefScreen'
+import { LoginScreen } from './LoginScreen'
 import { PlanScreen } from './PlanScreen'
 import { RunScreen } from './RunScreen'
+import { SplashScreen } from './SplashScreen'
 import { Bar } from './bits'
 
 /** The frame: the continent on the left, the day's business on the right. */
@@ -22,6 +24,9 @@ export function GameShell() {
       </main>
     )
   }
+
+  if (state.screen === 'splash') return <SplashScreen />
+  if (state.screen === 'login') return <LoginScreen />
 
   return (
     <main className="app">
@@ -45,14 +50,14 @@ export function GameShell() {
 
 function Header() {
   const { state } = useGame()
-  const { profile, session, run } = state
+  const { profile, run } = state
 
   return (
     <header className="app-header">
       <div>
         <h1>Expedition</h1>
         <p>
-          {profile ? `Jour ${profile.day} · ${profile.username}` : 'Chargement…'}
+          {profile ? profile.username : 'Chargement…'}
           {run ? ` · ${formatClock(run.now)}` : ''}
           {profile?.rested ? ' · reposé' : ''}
         </p>
@@ -68,9 +73,6 @@ function Header() {
           <span>
             <em>Crédits</em>
             <strong>{profile.credits}</strong>
-          </span>
-          <span className={session?.repo.mode === 'local' ? 'badge badge-warn' : 'badge'} title={session?.repo.reason}>
-            {session?.repo.mode === 'local' ? 'sauvegarde locale' : 'Supabase'}
           </span>
         </div>
       ) : null}
