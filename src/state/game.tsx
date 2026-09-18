@@ -275,6 +275,18 @@ export function GameProvider({ children }: { children: ReactNode }) {
     })()
   }, [state.screen, state.run, state.runSession, state.profile, state.session, persist])
 
+  const missions = useMemo(
+    () => missionsFor(state.profile, state.session?.shape),
+    [state.profile, state.session],
+  )
+
+  // The presence timer below only re-subscribes when the session changes, so
+  // it needs a ref to read the current board rather than closing over a stale one.
+  const missionsRef = useRef(missions)
+  useEffect(() => {
+    missionsRef.current = missions
+  }, [missions])
+
   // --- what the map shows ----------------------------------------------
   useEffect(() => {
     const session = state.session
@@ -282,7 +294,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
     const landing = state.mission?.baseZoneId ?? null
     const route = routeOf(state.plan, state.run)
-    const self = selfMarker(state)
+    const self = selfMarker(state, missions[0]?.baseZoneId)
+
+    // Only one elevator is open for now (see missionsFor): its disc is what
+    // gets surveyed on the map, the rest stays unmarked grey ground until
+    // upgrades unlock it.
+    const unlockedRegion = missions[0]?.region
+    const visibleZones = unlockedRegion
+      ? session.shape.zones.filter((zone) => zone.region === unlockedRegion)
+      : session.shape.zones
 
     // Frame the region the mission is in — once, when the mission is picked.
     // The whole continent is mostly unsurveyed sea and grey ground.
@@ -295,7 +315,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       : null
 
     mapBridge.setView({
-      zones: session.shape.zones,
+      zones: visibleZones,
       landingZoneId: landing,
       route: landing ? [...route, landing] : route,
       leg: legOf(state.run),
@@ -304,7 +324,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       self,
       others: state.players.filter((player) => player.userId !== session.identity.userId),
     })
-  }, [state])
+  }, [state, missions])
 
   // Tell the world where we are. On a timer, not on every simulation tick:
   // the clock advances ten times a second and presence does not need that.
@@ -314,7 +334,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const push = () => {
       const live = stateRef.current
       const session = live.session
-      const self = selfMarker(live)
+      const self = selfMarker(live, missionsRef.current[0]?.baseZoneId)
       if (!session || !self) return
 
       void trackSelf({
@@ -489,11 +509,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
   }, [persist])
 
-  const missions = useMemo(
-    () => missionsFor(state.profile, state.session?.shape),
-    [state.profile, state.session],
-  )
-
   const value = useMemo(
     () => ({ state, actions, missions, runSession: state.runSession }),
     [state, actions, missions],
@@ -535,7 +550,7 @@ function legOf(run: ExpeditionState | null) {
   return { from: activity.from, to: activity.to, progress }
 }
 
-function selfMarker(state: GameState) {
+function selfMarker(state: GameState, fallbackBaseZoneId?: string) {
   const zones = state.session?.shape.zones ?? []
   const color = state.session?.identity.color ?? '#3b82f6'
   const label = state.profile?.username ?? ''
@@ -563,7 +578,10 @@ function selfMarker(state: GameState) {
     if (here) return { x: here.x, y: here.y, color, label, self: true }
   }
 
-  const base = at(state.mission?.baseZoneId ?? state.session?.shape.zones[0]?.code)
+  // Before a mission is picked, park at the one open elevator rather than an
+  // arbitrary zone — the catalogue's own order (e.g. alphabetical, from
+  // Supabase) has no reason to land on it.
+  const base = at(state.mission?.baseZoneId ?? fallbackBaseZoneId ?? state.session?.shape.zones[0]?.code)
   return base ? { x: base.x, y: base.y, color, label, self: true } : null
 }
 
